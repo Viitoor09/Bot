@@ -1,0 +1,89 @@
+import telebot
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+CHAVE_API = os.getenv("TELEGRAM_TOKEN")
+
+bot = telebot.TeleBot(CHAVE_API)
+
+@bot.message_handler(commands=["carteira"])
+def responder_carteira(mensagem):
+    link = "https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL"
+    requisicao = requests.get(link)
+    dados = requisicao.json()
+
+    #Pega ovalor
+    v_dolar = float(dados["USDBRL"]["bid"])
+    v_euro = float(dados["EURBRL"]["bid"])
+
+    exibir_total(mensagem, v_dolar, v_euro)
+
+def exibir_total(msg, d, e):
+    soma = (d * 100) + (e * 100)
+    bot.reply_to(msg, f"Cotações de hoje: \n Dólar: R${d:.2f}\nEuro R${e:.2f}\n\nSe você tivesse R$100 de cada, teria R$ {soma:.2f}!")
+
+@bot.message_handler(commands=["admin"])
+def ver_estatisticas(mensagem):
+    try:
+        #Abrimos o arquivo no modo "r" (read - leitura)
+        with open("usuarios.txt", "r", encoding="utf-8") as arquivo:
+            linhas = arquivo.readlines()
+            total = len(linhas)
+
+        bot.reply_to(mensagem, f"Vitor, temos um total de {total} usuario(s) registrados! ")
+    except FileNotFoundError:
+        bot.reply_to(mensagem, "Ainda não temos nenhum usuário registrado.")
+
+#1 Decorator que responde apo comando /start ou /ajuda
+@bot.message_handler(commands=["start","ajuda"])
+def responder_inicio(mensagem):
+    # 1. Primeiro pega o nome do cliente
+    nome_usuario = mensagem.from_user.first_name
+    id_usuario = mensagem.from_user.id
+
+    texto = f"""
+    Olá! {nome_usuario} Eu sou o bot do Vitor.
+    Já sei que seu nome é {nome_usuario}, agora escolha uma opção: 
+    Escolha uma opção para continuar:
+    /vaga - Saber sobre a vaga de freela
+    /contato - Falar com o desenvolvedor
+    Responder qualquer outra coisa para um abraço virtual!
+    """
+    with open("usuarios.txt", "a", encoding="utf-8") as arquivo:
+        arquivo.write(f"Nome: {nome_usuario} | ID: {id_usuario}\n")
+    texto = f"Olá {nome_usuario}! Você foi registrado no meu sistema."
+    bot.reply_to(mensagem, texto)
+
+# 2. Decorator que filtra mensagens específicos
+@bot.message_handler(commands=["vaga"])
+def responder_vaga(mensagem):
+    bot.send_message(mensagem.chat.id, "Essa vaga de Python parece incrível! Estou estudando para aplicar nela.")
+
+@bot.message_handler(func=lambda message:True)
+def responder_dolar(mensagem):
+    texto_usuario = mensagem.text.lower()
+    dinheiro = ["dolar", "dólar"]
+
+    if any(d in texto_usuario for d in dinheiro):
+        link = "https://economia.awesomeapi.com.br/last/USD-BRL"
+        requisicao = requests.get(link)
+        dados = requisicao.json()
+
+        #Pegando o valor e transformando em número (float)
+        valor_dolar = float(dados["USDBRL"]["bid"])
+
+        bot.reply_to(mensagem, f"O Dólar está custando R$ {valor_dolar:.2f} agora!")
+
+# 3. Resposta padrão para qualquer outra mensagem de texto
+@bot.message_handler(func=lambda message: True)
+def responder_padrao(mensagem):
+    bot.reply_to(mensagem, "Recebi sua mensagem! Ainda estou aprendendo a processar texto livre. Use /start para ver os comandos.")
+
+
+
+# Mantém o bot rodando e verificcando se chegaram novas mensagens
+print("Bot online... Pressione Ctrl+C para parar.")
+bot.polling()
