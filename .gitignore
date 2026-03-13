@@ -1,4 +1,5 @@
 .env
 usuarios.txt
+bot_dados.db
 __pycache__/
 
