@@ -44,4 +44,4 @@ Este projeto é um bot para Telegram desenvolvido em **Python**, focado em autom
 
 1. **Clone o repositório:**
    ```bash
-   git clone [https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git](https://github.com/SEU_USUARIO/NOME_DO_REPOSITORIO.git))
+   git clone [https://github.com/Viitoor09/Bot.git](https://github.com/Viitoor09/Bot.git))
